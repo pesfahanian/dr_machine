@@ -18,7 +18,7 @@ class CustomUser(AbstractUser):
     objects = CustomUserManager()
 
     def __str__(self):
-        return str(self.id)
+        return str(self.email)
 
     @property
     def fullname(self):
@@ -36,7 +36,10 @@ class Profile(models.Model):
     mobile = models.CharField(max_length=10, null=True,
                               blank=True)  # todo: convert to phone-field
     mobile_confirmed = models.BooleanField(default=False)
-    national_id = models.IntegerField(default=None)
+    national_id = models.IntegerField(default=None, null=True, blank=True)
     national_id_confirmed = models.BooleanField(default=False)
-    medical_id = models.IntegerField(default=None)
+    medical_id = models.IntegerField(default=None, null=True, blank=True)
     medical_id_confirmed = models.BooleanField(default=False)
+
+    def __str__(self):
+        return str(self.user)
