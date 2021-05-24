@@ -1,10 +1,11 @@
 from django.utils import timezone
 
-from rest_framework import status
+from rest_framework import status, viewsets
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from accounts.models import Profile
 from accounts.serializers import CustomUserSerializers, ProfileSerializers
 
 
@@ -28,10 +29,14 @@ class LogoutView(APIView):
         return Response(data=data, status=status.HTTP_200_OK)
 
 
-class ProfileView(APIView):
+class ProfileView(viewsets.ModelViewSet):
     permission_classes = (IsAuthenticated, )
-    serializer_class = ProfileSerializers
 
-    def get(self, request, format=None):
-        return Response(data=self.serializer_class(request.user).data,
-                        status=status.HTTP_200_OK)
+    queryset = Profile.objects.all()
+
+    def get_serializer_class(self):
+        return ProfileSerializers
+
+    def filter_queryset(self, queryset):
+        queryset = self.get_queryset().filter(user=self.request.user)
+        return queryset
