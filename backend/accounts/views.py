@@ -25,13 +25,12 @@ class LogoutView(APIView):
         user = request.user
         user.last_login = timezone.now()
         user.save()
-        data = {"message": "user logged out successfully"}
+        data = {"message": "User logged out successfully!"}
         return Response(data=data, status=status.HTTP_200_OK)
 
 
 class ProfileView(viewsets.ModelViewSet):
     permission_classes = (IsAuthenticated, )
-
     queryset = Profile.objects.all()
 
     def get_serializer_class(self):
