@@ -1,8 +1,6 @@
 <p align="center">
-    <h2 align="center">Dr. Machine</h2>
-    <p align="center">
-        Intelligent Medical Imaging
-    </p>
+    <h3 align="center">Dr. Machine</h3>
+    <p align="center">Intelligent Medical Imaging</p>
 </p>
 
 ----
