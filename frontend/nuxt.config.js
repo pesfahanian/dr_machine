@@ -19,12 +19,18 @@ export default {
   },
 
   // Global CSS: https://go.nuxtjs.dev/config-css
-  css: [
-    '@/assets/scss/style.scss'
-  ],
+  styleResources: {
+    scss: ["assets/styles/style.scss"]
+  },
+
+  loading: {
+    color: 'blue',
+    height: '5px'
+  },
 
   // Plugins to run before rendering page: https://go.nuxtjs.dev/config-plugins
   plugins: [
+    { src: "~/plugins/vue-particles.js", ssr: false },
   ],
 
   // Auto import components: https://go.nuxtjs.dev/config-components
@@ -36,15 +42,12 @@ export default {
 
   // Modules: https://go.nuxtjs.dev/config-modules
   modules: [
+    // https://go.nuxtjs.dev/buefy
+    'nuxt-buefy',
     // https://go.nuxtjs.dev/axios
     '@nuxtjs/axios',
-    '@nuxtjs/auth-next',
+    "@nuxtjs/style-resources"
   ],
-
-  // nuxt auth
-  auth: {
-    // Options
-  },
 
   // Axios module configuration: https://go.nuxtjs.dev/config-axios
   axios: {},
@@ -56,6 +59,6 @@ export default {
   // Server configuration
   server: {
     // host: '0',
-    port: 8080 // default: 3000
+    port: 5000
   }
 }

@@ -1,99 +1,140 @@
 <template>
-    <div>
-        <section class="hero is-dogeblueprimary is-fullheight">
-            <div class="hero-head">
-                <Navbar />
-            </div>
+	<div>
+		<!-- <vue-particles
+			color="#acacac"
+			:particleOpacity="0.7"
+			:particlesNumber="80"
+			shapeType="circle"
+			:particleSize="4"
+			linesColor="#acacac"
+			:linesWidth="1"
+			:lineLinked="true"
+			:lineOpacity="1"
+			:linesDistance="150"
+			:moveSpeed="0.4"
+			:hoverEffect="true"
+			hoverMode="grab"
+			:clickEffect="true"
+			clickMode="push"
+		>
+		</vue-particles> -->
+		<section class="hero is-fullheight">
+			<div class="hero-head">
+				<Navbar />
+			</div>
 
-            <div class="hero-body">
-                <div class="container has-text-centered">
-                    <p class="title">Dr. Machine</p>
-                    <p class="subtitle has-text-grey">
-                        Intelligent Medical Imaging
-                    </p>
-                </div>
-            </div>
+			<div class="hero-body">
+				<div class="container has-text-centered">
+					<p class="title">Dr. Machine</p>
+					<p class="subtitle">Intelligent Medical Imaging</p>
+					<NuxtLink to="#" class="button is-primary"> Get started! </NuxtLink>
+				</div>
+			</div>
 
-            <!-- Hero footer: will stick at the bottom -->
-            <div class="hero-foot">
-                <nav class="tabs is-boxed is-fullwidth">
-                    <div class="container">
-                        <ul>
-                            <li
-                                v-bind:class="{ 'is-active': isActive == 'intro' }"
-                                v-on:click="
-                                    isActive = 'intro';
-                                    scroll('intro');
-                                "
-                            >
-                                <a class="has-text-primary">Introduction</a>
-                            </li>
-                            <li
-                                v-bind:class="{ 'is-active': isActive == 'service' }"
-                                v-on:click="
-                                    isActive = 'service';
-                                    scroll('service');
-                                "
-                            >
-                                <a class="has-text-primary">Services</a>
-                            </li>
-                            <li
-                                v-bind:class="{ 'is-active': isActive == 'team' }"
-                                @click="
-                                    isActive = 'team';
-                                    scroll('team');
-                                "
-                            >
-                                <a class="has-text-primary">Team</a>
-                            </li>
-                            <li
-                                v-bind:class="{ 'is-active': isActive == 'contact' }"
-                                @click="
-                                    isActive = 'contact';
-                                    scroll('contact');
-                                "
-                            >
-                                <a class="has-text-primary">Contact</a>
-                            </li>
-                        </ul>
-                    </div>
-                </nav>
-            </div>
-        </section>
-        <section>
-            <div class="content">
-                <div ref="intro" v-show="isActive == 'intro'">My Introduction</div>
-                <div ref="service" v-show="isActive == 'service'">My Services</div>
-                <div ref="team" v-show="isActive == 'team'">My Team</div>
-                <div ref="contact" v-show="isActive == 'contact'">My Contact</div>
-            </div>
-        </section>
-    </div>
+			<div class="hero-foot">
+				<div class="container">
+					<nav class="tabs is-boxed is-fullwidth">
+						<ul>
+							<li
+								v-for="tab in tabs"
+								:key="tab.title"
+								:class="{
+									'is-active': currentTab === tab.component,
+								}"
+							>
+								<a @click="currentTab = tab.component">
+									{{ tab.title }}
+								</a>
+							</li>
+						</ul>
+					</nav>
+				</div>
+			</div>
+		</section>
+		<div class="container">
+			<component :is="currentTab"></component>
+		</div>
+	</div>
 </template>
 
 <script>
+import Contact from "@/components/home/Contact";
+import Introduction from "@/components/home/Introduction";
+import Services from "@/components/home/Services";
+import Team from "@/components/home/Team";
+
 import Navbar from "@/components/layout/Navbar";
 
 export default {
-    layout: "just_footer",
-    components: {
-        Navbar,
-    },
-    data() {
-        return {
-            isActive: "intro",
-        };
-    },
-    methods: {
-        scroll(refName) {
-            var element = this.$refs[refName];
-            var top = element.offsetTop;
-
-            window.scrollTo(0, top);
-        },
-    },
+	layout: "just_footer",
+	components: {
+		Contact,
+		Introduction,
+		Services,
+		Team,
+		Navbar,
+	},
+	data() {
+		return {
+			currentTab: Introduction,
+			tabs: [
+				{
+					title: "Introduction",
+					component: Introduction,
+				},
+				{
+					title: "Services",
+					component: Services,
+				},
+				{
+					title: "Team",
+					component: Team,
+				},
+				{
+					title: "Contact",
+					component: Contact,
+				},
+			],
+		};
+	},
 };
 </script>
 
 <style lang="scss" scoped>
+#particles-js {
+	width: 100%;
+	position: fixed;
+	top: 0;
+	right: 0;
+	bottom: 0;
+	left: 0;
+	z-index: 0;
+}
+
+.hero {
+	background-color: $dogeblueprimary;
+}
+
+.title {
+	font-size: 4rem;
+	color: white;
+	padding-bottom: 1rem;
+}
+
+.subtitle {
+	color: whitesmoke;
+	padding-bottom: 1rem;
+}
+
+.tabs a {
+	color: white;
+}
+
+.tabs a:hover {
+	color: $primary;
+}
+
+.tabs.is-boxed a:hover {
+	background-color: lighten($color: $dogeblueprimary, $amount: 10);
+}
 </style>

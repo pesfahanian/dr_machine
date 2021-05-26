@@ -1,4 +1,4 @@
-# dr_machine
+# nuxt_buefy
 
 ## Build Setup
 
