@@ -32,6 +32,8 @@ class LogoutView(APIView):
 class ProfileView(viewsets.ModelViewSet):
     permission_classes = (IsAuthenticated, )
     queryset = Profile.objects.all()
+    lookup_field = 'id'
+    lookup_url_kwarg = 'id'
 
     def get_serializer_class(self):
         return ProfileSerializers
@@ -39,3 +41,7 @@ class ProfileView(viewsets.ModelViewSet):
     def filter_queryset(self, queryset):
         queryset = self.get_queryset().filter(user=self.request.user)
         return queryset
+
+    def list(self, request, *args, **kwargs):
+        self.kwargs['id'] = request.user.profile.id
+        return self.retrieve(request, *args, **kwargs)
