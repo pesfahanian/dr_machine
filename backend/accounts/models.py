@@ -35,6 +35,7 @@ class Profile(models.Model):
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE)
     email_confirmed = models.BooleanField(default=False)
     mobile = models.CharField(max_length=11,
+                              default=None,
                               null=True,
                               blank=True,
                               validators=[mobile_regex])
@@ -45,7 +46,7 @@ class Profile(models.Model):
                                    blank=True,
                                    validators=[validate_national_ID])
     national_id_confirmed = models.BooleanField(default=False)
-    medical_id = models.CharField(max_length=15,
+    medical_id = models.CharField(max_length=15,  # todo: R&D on real length
                                   default=None,
                                   null=True,
                                   blank=True)
