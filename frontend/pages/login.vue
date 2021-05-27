@@ -13,40 +13,7 @@
 
                 <hr />
 
-                <form method="post">
-                    <b-field>
-                        <template #label>
-                            <span class="has-text-white">Email</span>
-                        </template>
-                        <b-input
-                            type="email"
-                            icon="email"
-                            placeholder="john@doe.com"
-                        >
-                        </b-input>
-                    </b-field>
-                    <b-field>
-                        <template #label>
-                            <span class="has-text-white">Password</span>
-                        </template>
-                        <b-input
-                            type="password"
-                            icon="key-variant"
-                            placeholder="************"
-                            password-reveal
-                        >
-                        </b-input>
-                    </b-field>
-
-                    <br />
-
-                    <button
-                        class="button is-block is-fullwidth is-primary is-medium"
-                        type="submit"
-                    >
-                        Log in
-                    </button>
-                </form>
+                <LoginForm />
 
                 <br />
 
@@ -74,13 +41,17 @@
 </template>
 
 <script>
+import LoginForm from "@/components/forms/LoginForm";
+
 export default {
     layout: "bare",
+    components: {
+        LoginForm,
+    },
 };
 </script>
 
 <style lang="scss" scoped>
-
 .hero {
     background-color: $dogeblueprimary;
 }
@@ -94,5 +65,4 @@ export default {
     padding: 1.5rem;
     box-shadow: 8px 8px 15px #151a21, -8px -8px 15px #1b2430;
 }
-
 </style>
