@@ -1,3 +1,6 @@
 from django.contrib import admin
 
-# Register your models here.
+from inferences.models import ChestXRayInference, COVIDCTInference
+
+admin.site.register(ChestXRayInference)
+admin.site.register(COVIDCTInference)

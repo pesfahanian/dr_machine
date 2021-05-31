@@ -1,9 +1,15 @@
-from datetime import timedelta
+import os
+import dotenv
 from pathlib import Path
+from datetime import timedelta
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
-SECRET_KEY = 'z#feu5ndukidbtv==n8tec=ztg&6064%6nzp*o*8s8t6x1c^do'
+dotenv_file = os.path.join(BASE_DIR, '.env')
+if os.path.isfile(dotenv_file):
+    dotenv.load_dotenv(dotenv_file)
+
+SECRET_KEY = os.environ['SECRET_KEY']
 
 DEBUG = True
 
@@ -100,8 +106,8 @@ MEDIA_ROOT = 'media/'
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
-EMAIL_HOST_USER = '[YOUR EMAIL THAT WILL SEND]'
-EMAIL_HOST_PASSWORD = '[YOUR EMAIL APP PASSWORD]'
+EMAIL_HOST_USER = os.environ['GMAIL_USERNAME']
+EMAIL_HOST_PASSWORD = os.environ['GMAIL_PASSWORD']
 EMAIL_USE_TLS = True
 
 REST_FRAMEWORK = {
