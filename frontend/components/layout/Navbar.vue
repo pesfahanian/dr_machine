@@ -31,4 +31,8 @@ export default {
 .navbar {
 	background-color: $dogeblueprimary;
 }
+
+.navbar-menu .is-active {
+	background-color: lighten($color: $dogeblueprimary, $amount: 10) !important;
+}
 </style>
