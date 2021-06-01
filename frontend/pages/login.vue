@@ -37,16 +37,19 @@
                 </nav>
             </div>
         </div>
+        <Footer />
     </section>
 </template>
 
 <script>
 import LoginForm from "@/components/forms/LoginForm";
+import Footer from "@/components/layout/Footer";
 
 export default {
     layout: "bare",
     components: {
         LoginForm,
+        Footer,
     },
 };
 </script>
