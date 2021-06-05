@@ -1,4 +1,3 @@
-import os
 import uuid
 
 from django.contrib.auth.models import AbstractUser
@@ -7,8 +6,6 @@ from django.utils.translation import ugettext_lazy as _
 
 from accounts.managers import CustomUserManager
 from accounts.validators import mobile_regex, validate_national_ID
-
-from backend.settings.base import MEDIA_ROOT
 
 
 class CustomUser(AbstractUser):
@@ -34,9 +31,9 @@ class CustomUser(AbstractUser):
 
     @property
     def media_path(self):
-        now = str(self.date_joined).split(' ')[0]
-        directory_name = f'{now}_{self.nickname}'
-        return os.path.join(MEDIA_ROOT, directory_name)
+        timestamp = str(self.date_joined).split(' ')[0]
+        directory_name = f'{timestamp}_{self.nickname}'
+        return directory_name
 
 
 class Profile(models.Model):

@@ -1,3 +1,4 @@
+import os
 import uuid
 
 from django.db import models
@@ -5,8 +6,10 @@ from django.utils.translation import gettext_lazy as _
 
 from accounts.models import CustomUser
 
+from backend.settings.base import MEDIA_ROOT
 
 # todo: Separate classification and segmentation inference applications.
+
 
 class BaseInference(models.Model):
     prescriber = models.ForeignKey(CustomUser,
@@ -42,8 +45,6 @@ class ChestXRayInference(BaseInference):
         UNKNOWN = 'UNKN', _('Unknown')
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    # file = models.FileField(upload_to='story_media/', null=False, blank=False)
-
     diagnosis = models.CharField(max_length=4,
                                  choices=ChestXRayAbnormalities.choices,
                                  default=ChestXRayAbnormalities.UNKNOWN)
@@ -51,6 +52,13 @@ class ChestXRayInference(BaseInference):
 
     def __str__(self):
         return str(self.id)
+
+
+def COVIDCT_file_path(instance, filename):
+    COVIDCT_files_directory = os.path.join(instance.prescriber.media_path,
+                                           'covid_ct')
+    file_path = os.path.join(COVIDCT_files_directory, filename)
+    return file_path
 
 
 class COVIDCTInference(BaseInference):
@@ -62,6 +70,9 @@ class COVIDCTInference(BaseInference):
         UNKNOWN = 'UNKN', _('Unknown')
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    file = models.FileField(upload_to=COVIDCT_file_path,
+                            null=False,
+                            blank=False)
     diagnosis = models.CharField(max_length=4,
                                  choices=COVIDCTAbnormalities.choices,
                                  default=COVIDCTAbnormalities.UNKNOWN)

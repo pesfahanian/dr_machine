@@ -19,5 +19,5 @@ class COVIDCTInferenceSerializers(serializers.ModelSerializer):
 
     class Meta:
         model = COVIDCTInference
-        fields = ('id', 'prescriber', 'HIS_case_id', 'HIS_patient_id',
-                  'timestamp', 'is_deleted', 'diagnosis', 'report')
+        fields = ('id', 'prescriber', 'file', 'timestamp', 'diagnosis',
+                  'report', 'is_deleted')
