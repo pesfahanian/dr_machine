@@ -1,3 +1,4 @@
+import os
 import uuid
 
 from django.contrib.auth.models import AbstractUser
@@ -6,6 +7,8 @@ from django.utils.translation import ugettext_lazy as _
 
 from accounts.managers import CustomUserManager
 from accounts.validators import mobile_regex, validate_national_ID
+
+from backend.settings.base import MEDIA_ROOT
 
 
 class CustomUser(AbstractUser):
@@ -29,6 +32,12 @@ class CustomUser(AbstractUser):
     def nickname(self):
         return f'{self.first_name}_{self.last_name}'.lower()
 
+    @property
+    def media_path(self):
+        now = str(self.date_joined).split(' ')[0]
+        directory_name = f'{now}_{self.nickname}'
+        return os.path.join(MEDIA_ROOT, directory_name)
+
 
 class Profile(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -46,10 +55,11 @@ class Profile(models.Model):
                                    blank=True,
                                    validators=[validate_national_ID])
     national_id_confirmed = models.BooleanField(default=False)
-    medical_id = models.CharField(max_length=15,  # todo: R&D on real length
-                                  default=None,
-                                  null=True,
-                                  blank=True)
+    medical_id = models.CharField(
+        max_length=15,  # todo: R&D on real length
+        default=None,
+        null=True,
+        blank=True)
     medical_id_confirmed = models.BooleanField(default=False)
 
     def __str__(self):

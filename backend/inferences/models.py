@@ -42,6 +42,8 @@ class ChestXRayInference(BaseInference):
         UNKNOWN = 'UNKN', _('Unknown')
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    # file = models.FileField(upload_to='story_media/', null=False, blank=False)
+
     diagnosis = models.CharField(max_length=4,
                                  choices=ChestXRayAbnormalities.choices,
                                  default=ChestXRayAbnormalities.UNKNOWN)

@@ -8,7 +8,7 @@ class COVIDCTInferenceAdmin(admin.ModelAdmin):
     list_display = ('id', 'prescriber', 'timestamp', 'diagnosis', 'report',
                     'is_deleted')
     list_filter = ('id', 'prescriber', 'timestamp', 'diagnosis', 'report',
-                    'is_deleted')
+                   'is_deleted')
 
 
 admin.site.register(ChestXRayInference)
