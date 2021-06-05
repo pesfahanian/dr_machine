@@ -6,6 +6,8 @@ from django.utils.translation import gettext_lazy as _
 from accounts.models import CustomUser
 
 
+# todo: Separate classification and segmentation inference applications.
+
 class BaseInference(models.Model):
     prescriber = models.ForeignKey(CustomUser,
                                    on_delete=models.SET_NULL,
