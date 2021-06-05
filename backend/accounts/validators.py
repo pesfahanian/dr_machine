@@ -16,7 +16,6 @@ mobile_regex = RegexValidator(regex=r'^\+?09?\d{10}$',
 # Acceptable national ID format:
 #   - Exactly 11 digits
 #   - Meets validation criteria
-# Inspired by: https://gist.github.com/ebraminio/5292017
 def validate_national_ID(input: str):
     if input.isdecimal() is False:
         raise ValidationError(_('National ID must contain only numbers.'), )
@@ -28,6 +27,7 @@ def validate_national_ID(input: str):
         return True
 
 
+# Inspired by: https://gist.github.com/ebraminio/5292017
 def is_valid(input: str):
     check = int(input[9])
     s = sum([int(input[x]) * (10 - x) for x in range(9)]) % 11

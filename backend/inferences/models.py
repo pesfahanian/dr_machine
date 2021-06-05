@@ -1,12 +1,13 @@
 import os
 import uuid
 
+from django.core.validators import FileExtensionValidator
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
 from accounts.models import CustomUser
 
-from backend.settings.base import MEDIA_ROOT
+from inferences.validators import validate_file_size
 
 # todo: Separate classification and segmentation inference applications.
 
@@ -69,10 +70,17 @@ class COVIDCTInference(BaseInference):
         OTHER = 'OTHR', _('Other')
         UNKNOWN = 'UNKN', _('Unknown')
 
+    ALLOWED_EXTENSIONS = ['jpg', 'png']  # todo: change to DICOM later.
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    file = models.FileField(upload_to=COVIDCT_file_path,
-                            null=False,
-                            blank=False)
+    file = models.FileField(
+        upload_to=COVIDCT_file_path,
+        validators=[
+            FileExtensionValidator(allowed_extensions=ALLOWED_EXTENSIONS),
+            validate_file_size
+        ],
+        null=False,
+        blank=False)
     diagnosis = models.CharField(max_length=4,
                                  choices=COVIDCTAbnormalities.choices,
                                  default=COVIDCTAbnormalities.UNKNOWN)
