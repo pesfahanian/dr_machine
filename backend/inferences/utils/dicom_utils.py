@@ -1,6 +1,6 @@
 import pydicom as dcm
 
-DATA_ELEMENTS = ['PatientID', 'PatientSex', 'PatientBirthDate']
+DATA_ELEMENTS = ['PatientID', 'PatientSex', 'PatientAge']
 
 
 def read_metadata(file) -> dict:

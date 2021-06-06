@@ -21,12 +21,11 @@ class BaseInference(models.Model):
     prescriber = models.ForeignKey(CustomUser,
                                    on_delete=models.SET_NULL,
                                    null=True)
-    case_id = models.CharField(max_length=64, blank=True, null=True)
     patient_id = models.CharField(max_length=64, blank=True, null=True)
     patient_sex = models.CharField(max_length=1,
                                    choices=PatientSex.choices,
                                    default=PatientSex.UNKNOWN)
-    patient_birthday = models.DateTimeField(blank=True, null=True)
+    patient_age = models.PositiveSmallIntegerField(blank=True, null=True)
     timestamp = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     is_deleted = models.BooleanField(default=False)
 

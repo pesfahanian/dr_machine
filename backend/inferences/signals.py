@@ -19,6 +19,5 @@ def run_covid_diagnosis(sender, instance, created, **kwargs):
         metadata = read_metadata(instance.file)
         instance.patient_id = metadata['PatientID']
         instance.patient_sex = metadata['PatientSex']
-        if (metadata['PatientBirthDate'] != ""):
-            instance.patient_birthday = metadata['PatientBirthDate']
+        instance.patient_age = int(metadata['PatientAge'][:-1])
         instance.save()
