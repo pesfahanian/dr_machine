@@ -13,11 +13,20 @@ from inferences.validators import validate_file_size
 
 
 class BaseInference(models.Model):
+    class PatientSex(models.TextChoices):
+        MALE = 'M', _('Male')
+        FEMALE = 'F', _('Female')
+        UNKNOWN = 'U', _('Unknown')
+
     prescriber = models.ForeignKey(CustomUser,
                                    on_delete=models.SET_NULL,
                                    null=True)
-    HIS_case_id = models.CharField(max_length=64, blank=True, null=True)
-    HIS_patient_id = models.CharField(max_length=64, blank=True, null=True)
+    case_id = models.CharField(max_length=64, blank=True, null=True)
+    patient_id = models.CharField(max_length=64, blank=True, null=True)
+    patient_sex = models.CharField(max_length=1,
+                                   choices=PatientSex.choices,
+                                   default=PatientSex.UNKNOWN)
+    patient_birthday = models.DateTimeField(blank=True, null=True)
     timestamp = models.DateTimeField(auto_now_add=True, blank=True, null=True)
     is_deleted = models.BooleanField(default=False)
 
@@ -70,7 +79,7 @@ class COVIDCTInference(BaseInference):
         OTHER = 'OTHR', _('Other')
         UNKNOWN = 'UNKN', _('Unknown')
 
-    ALLOWED_EXTENSIONS = ['jpg', 'png']  # todo: change to DICOM later.
+    ALLOWED_EXTENSIONS = ['dcm']
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     file = models.FileField(
