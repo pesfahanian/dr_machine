@@ -139,6 +139,16 @@ DJOSER = {
     "PASSWORD_RESET_CONFIRM_URL": "#/password/reset/confirm/{uid}/{token}",
 }
 
+REDIS_HOST = 'redis://localhost:6379'
+REDIS_PASSWORD = None
+
+CELERY_BROKER_URL = REDIS_HOST + '/0'
+CELERY_RESULT_BACKEND = REDIS_HOST + '/1'
+CELERY_ACCEPT_CONTENT = ['application/json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = TIME_ZONE
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
