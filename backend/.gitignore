@@ -1,5 +1,12 @@
+# Byte-compiled / optimized / DLL files
 __pycache__/
-media/
+
+# Environments
+.env
 .venv
+
+# Database
 db.sqlite3
-*.env
+
+# Custom
+*.h5
