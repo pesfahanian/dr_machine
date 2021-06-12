@@ -78,7 +78,7 @@ class COVIDCTInference(BaseInference):
         OTHER = 'OTHR', _('Other')
         UNKNOWN = 'UNKN', _('Unknown')
 
-    ALLOWED_EXTENSIONS = ['dcm']
+    ALLOWED_EXTENSIONS = ['dcm', 'jpg']
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     file = models.FileField(
