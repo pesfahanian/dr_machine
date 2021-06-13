@@ -3,6 +3,7 @@ from django.dispatch import receiver
 
 from inferences.core.model import Model
 from inferences.models import ChestXRayInference, COVIDCTInference
+from inferences.tasks import execute_run_inference
 from inferences.utils.dicom_utils import read_metadata
 
 
@@ -22,7 +23,11 @@ def run_covid_inference(sender, instance, created, **kwargs):
         # instance.patient_sex = metadata['PatientSex']
         # instance.patient_age = int(metadata['PatientAge'][:-1])
         # instance.save()
-        model = Model()
-        report = model.run_inference(file_path=instance.file.path)
+
+        # model = Model()
+        # report = model.run_inference(file_path=instance.file.path)
+
+        report = execute_run_inference(file_path=instance.file.path)
+
         instance.report = report
         instance.save()
