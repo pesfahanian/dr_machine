@@ -7,6 +7,8 @@ from django.utils.translation import gettext_lazy as _
 
 from accounts.models import CustomUser
 
+from backend.settings import MEDIA_ROOT
+
 from inferences.validators import validate_file_size
 
 # todo: Separate classification and segmentation inference applications.
@@ -65,7 +67,7 @@ class ChestXRayInference(BaseInference):
 
 def COVIDCT_file_path(instance, filename):
     COVIDCT_files_directory = os.path.join(instance.prescriber.media_path,
-                                           'covid_ct')
+                                           'covid_ct', 'cases')
     file_path = os.path.join(COVIDCT_files_directory, filename)
     return file_path
 
@@ -78,7 +80,8 @@ class COVIDCTInference(BaseInference):
         OTHER = 'OTHR', _('Other')
         UNKNOWN = 'UNKN', _('Unknown')
 
-    ALLOWED_EXTENSIONS = ['dcm', 'jpg']
+    # ALLOWED_EXTENSIONS = ['dcm', 'jpg']
+    ALLOWED_EXTENSIONS = ['zip']
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     file = models.FileField(
@@ -96,3 +99,23 @@ class COVIDCTInference(BaseInference):
 
     def __str__(self):
         return str(self.id)
+
+    @property
+    def COVIDCT_directory_path(self):
+        directory_path = os.path.join(self.prescriber.media_path, 'covid_ct')
+        directory_path = f'{MEDIA_ROOT}/{directory_path}'
+        return directory_path
+
+    @property
+    def cases_directory_path(self):
+        cases_path = os.path.join(self.COVIDCT_directory_path, 'cases')
+        if not os.path.isdir(cases_path):
+            os.makedirs(cases_path)
+        return cases_path
+
+    @property
+    def results_directory_path(self):
+        results_path = os.path.join(self.COVIDCT_directory_path, 'results')
+        if not os.path.isdir(results_path):
+            os.makedirs(results_path)
+        return results_path
