@@ -3,7 +3,7 @@ from django.dispatch import receiver
 
 from inferences.core.model import Model
 from inferences.models import ChestXRayInference, COVIDCTInference
-from inferences.tasks import execute_run_inference
+from inferences.tasks import execute_run_inference, get_results
 from inferences.utils.dicom_utils import read_metadata
 
 
@@ -27,7 +27,12 @@ def run_covid_inference(sender, instance, created, **kwargs):
         # model = Model()
         # report = model.run_inference(file_path=instance.file.path)
 
-        report = execute_run_inference(file_path=instance.file.path)
+        # report = execute_run_inference.delay(file_path=instance.file.path)
+
+        task = execute_run_inference.delay(file_path=instance.file.path)
+        task_id = task.id
+        report = get_results(task_id)
+        print('-------', report)
 
         instance.report = report
         instance.save()
