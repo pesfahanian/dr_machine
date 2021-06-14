@@ -1,8 +1,15 @@
 # Backend for Dr. Machine
 
-This application is developed using [Django](https://www.djangoproject.com/), [Django REST Framework](https://www.django-rest-framework.org/), and [Djoser](https://djoser.readthedocs.io/en/latest/getting_started.html).
+This application is developed using:
+- [Django](https://www.djangoproject.com/), [Django REST Framework](https://www.django-rest-framework.org/), [Djoser](https://djoser.readthedocs.io/en/latest/getting_started.html)
+- [Celery](https://docs.celeryproject.org/en/stable/), [Redis](https://redis.io/)
+- [Keras](https://keras.io/), [PyDicom](https://pydicom.github.io/)
 
 ## Usage
+- Relocate to the `backend` directory:
+    ```shell
+    $ cd backend
+    ```
 - Create a virtual environment:
     ```shell
     $ python -m venv .venv
@@ -23,7 +30,11 @@ This application is developed using [Django](https://www.djangoproject.com/), [D
     ```shell
     $ python manage.py createsuperuser
     ```
-- Run server:
+- Start the `redis` worker:
+    ```shell
+    $ celery -A backend.celery worker -l info
+    ```
+- In a seperate terminal, run server:
     ```shell
     $ python manage.py runserver --settings=backend.settings.development
     ```
