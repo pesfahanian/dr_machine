@@ -1,5 +1,6 @@
+import logging
+
 import os
-import glob
 
 import cv2
 import numpy as np
@@ -10,45 +11,53 @@ from lungmask import mask as msk
 from skimage import measure
 
 from tensorflow import keras
-from tensorflow.keras import backend as K
-from tensorflow.keras.models import load_model
+# from tensorflow.keras import backend as K
+# from tensorflow.keras.models import load_model
 
 from scipy.ndimage import gaussian_filter as gf
 from scipy.ndimage.morphology import binary_dilation
 
-MODEL_PATH = f'{os.getcwd()}/inferences/core/h5s/model.h5'
+logger = logging.getLogger('backend')
+
+MODEL_PATH = f'{os.getcwd()}/inferences/core/h5s/fuck_model.h5'
 WEIGHTS_0_PATH = f'{os.getcwd()}/inferences/core/h5s/weight_0.h5'
 WEIGHTS_1_PATH = f'{os.getcwd()}/inferences/core/h5s/weight_1.h5'
 
-BATCH_SIZE = 16
+BATCH_SIZE = 8
 
 
-class Model:
+class COVIDSegmentationModel:
     def __init__(self) -> None:
-        self.batch_size = BATCH_SIZE
-        self.msk = msk
-        # todo: run msk on mock data for init
-        self.model = keras.models.load_model(MODEL_PATH)
-
-    def run_segmentation(self, directory_path):
+        logger.info('Initializing the COVID segmentation model...')
         try:
-            return self._run_segmentation(directory_path)
+            self.batch_size = BATCH_SIZE
+            self.msk = msk
+            # todo: run msk on mock data for init
+            self.model = keras.models.load_model(MODEL_PATH)
+            logger.info('COVID segmentation model initialized!')
         except Exception as e:
-            message = f'Shit got fucked up! Reason: {str(e)}.'
-            print('------------------------')
-            print(message)
-            print('------------------------')
+            message = ('Failed to initialize the COVID segmentation model. '
+                       f'Reason: {str(e)}.')
+            logger.error(message)
+            raise Exception(message)  # todo: Replace base exception.
 
-    def _run_segmentation(self, directory_path):
-        series_IDs = sitk.ImageSeriesReader.GetGDCMSeriesIDs(directory_path)
-        series_file_names = sitk.ImageSeriesReader.GetGDCMSeriesFileNames(
-            directory_path, series_IDs[0])
-        series_reader = sitk.ImageSeriesReader()
-        series_reader.SetFileNames(series_file_names)
-        series_reader.LoadPrivateTagsOn()
-        image3D = series_reader.Execute()
-        lobe_segmentation = self.run_mask(image3D)
-        infec_segmentation = self.run_models(image3D)
+    def run(self, directory_path):
+        return self.__run_segmentation(directory_path)
+
+    def __run_segmentation(self, directory_path):
+        logger.info('Running segmentation...')
+
+        series_IDs = self.__extract_series_ids(directory_path=directory_path)
+
+        series_file_names = self.__extract_series_filenames(
+            directory_path=directory_path, series_IDs=series_IDs)
+
+        series_reader = self.__read_series(series_file_names=series_file_names)
+        image3D = self.__execute_series_reader(series_reader)
+        lobe_segmentation = self.__run_mask(image3D)
+        image3D = self.__preprocess(image3D)
+        infec_segmentation = self.__run_models(image3D)
+
         feature = []
         for i_lobe in range(1, 6):
             lobe_point = infec_segmentation.copy()
@@ -56,57 +65,175 @@ class Model:
             lobe_point = lobe_point.flatten()
             feature.append(((lobe_point > 0.5).sum()) / len(lobe_point))
         feature = np.round(np.array(feature) * 100, 1)
-        return str(feature)
+        logger.info(f'Features: {feature}')
 
-    def run_mask(self, image3D):
-        return self.msk.apply_fused(image3D,
-                                    basemodel='LTRCLobes',
-                                    fillmodel='R231',
-                                    force_cpu=False,
-                                    batch_size=8,
-                                    volume_postprocessing=True,
-                                    noHU=False)
+        self.__store_results(image3D=image3D,
+                             infec_segmentation=infec_segmentation,
+                             lobe_segmentation=lobe_segmentation,
+                             feature=feature)
 
-    def run_models(self, image3D):
-        aggregate = self.run_model_0(image3D) + self.run_model_1(image3D)
-        return aggregate
+    def __run_mask(self, image3D):
+        logger.info('Running mask...')
+        try:
+            _mask = self.msk.apply_fused(image3D,
+                                         basemodel='LTRCLobes',
+                                         fillmodel='R231',
+                                         force_cpu=False,
+                                         batch_size=8,
+                                         volume_postprocessing=True,
+                                         noHU=False)
+            logger.info('Mask run complete!')
+            return _mask
+        except Exception as e:
+            message = (f'Failed to run mask. Reason: {str(e)}.')
+            logger.error(message)
 
-    def run_model_0(self, image3D):
-        self.model.load_weights(WEIGHTS_0_PATH)
-        infec_segmentation = (self.model.predict(
-            image3D[:, :, ::-1, :], batch_size=self.batch_size, workers=16
-        )[:, :, ::-1, 0] + self.model.predict(
-            image3D, batch_size=self.batch_size, workers=16)[:, :, :, 0]) / 2
-        return infec_segmentation
+    def __run_models(self, image3D):
+        logger.info('Running models...')
+        try:
+            aggregate = self.__run_model_0(image3D) + self.__run_model_1(
+                image3D)
+            logger.info('Model runs complete!')
+            return aggregate
+        except Exception as e:
+            message = (f'Failed to run models. Reason: {str(e)}.')
+            logger.error(message)
 
-    def run_model_1(self, image3D):
-        self.model.load_weights(WEIGHTS_1_PATH)
-        infec_segmentation = (self.model.predict(
-            image3D[:, :, ::-1, :], batch_size=self.batch_size, workers=16
-        )[:, :, ::-1, 0] + self.model.predict(
-            image3D, batch_size=self.batch_size, workers=16)[:, :, :, 0]) / 2
-        return infec_segmentation
+    def __run_model_0(self, image3D):
+        logger.info('Running model_0...')
+        try:
+            self.model.load_weights(WEIGHTS_0_PATH)
+            infec_segmentation = (self.model.predict(
+                image3D[:, :, ::-1, :],
+                batch_size=self.batch_size,
+                workers=16,
+                verbose=1)[:, :, ::-1, 0] + self.model.predict(
+                    image3D, batch_size=self.batch_size, workers=16)[:, :, :,
+                                                                     0]) / 2
+            logger.info('Model_0 run complete!')
+            return infec_segmentation
+        except Exception as e:
+            message = (f'Failed to run model_0. Reason: {str(e)}.')
+            logger.error(message)
 
-    def preprocess(self, image3D):
-        sss = 0.7
-        ct = sitk.GetArrayViewFromImage(image3D).copy()
-        ct[ct < -1024] = -1024
-        sig = min((ct.shape[2] / 150.) * sss, 1)
-        ct = gf(ct, sig)
-        ct = self.window(ct)
-        ct = np.array([ct, ct, ct]).transpose(1, 2, 3, 0)
-        return ct
+    def __run_model_1(self, image3D):
+        logger.info('Running model_1...')
+        try:
+            self.model.load_weights(WEIGHTS_1_PATH)
+            infec_segmentation = (self.model.predict(
+                image3D[:, :, ::-1, :],
+                batch_size=self.batch_size,
+                workers=16,
+                verbose=1)[:, :, ::-1, 0] + self.model.predict(
+                    image3D, batch_size=self.batch_size, workers=16)[:, :, :,
+                                                                     0]) / 2
+            logger.info('Model_1 run complete!')
+            return infec_segmentation
+        except Exception as e:
+            message = (f'Failed to run model_1. Reason: {str(e)}.')
+            logger.error(message)
+
+    def __preprocess(self, image3D):
+        logger.info('Pre-processing...')
+        try:
+            sss = 0.7
+            ct = sitk.GetArrayViewFromImage(image3D).copy()
+            ct[ct < -1024] = -1024
+            sig = min((ct.shape[2] / 150.) * sss, 1)
+            ct = gf(ct, sig)
+            ct = self.__calculate_window(ct)
+            ct = np.array([ct, ct, ct]).transpose(1, 2, 3, 0)
+            logger.info('Pre-process complete!')
+            return ct
+        except Exception as e:
+            message = (f'Failed to pre-process. Reason: {str(e)}.')
+            logger.error(message)
+
+    def __store_results(self, image3D, infec_segmentation, lobe_segmentation,
+                        feature):
+        logger.info('Storing results...')
+        try:
+            for s in range(len(infec_segmentation)):
+                a = self.__plot_slice(image3D,
+                                      lobe_segmentation,
+                                      infec_segmentation,
+                                      feature,
+                                      s=s)
+                a = Image.fromarray(a)
+                store_path = 'media/2021-05-24_ava_lazemzadeh/covid_ct/resutls/0a79338b-935e-42e1-ba6c-d6d83f2a1e5a/'
+                a.save(store_path + str(s).zfill(3) + '.jpg',
+                       format='JPEG',
+                       quality=80)
+            logger.info('Results stored!')
+        except Exception as e:
+            message = (f'Failed to store results. Reason: {str(e)}.')
+            logger.error(message)
 
     @staticmethod
-    def window(img, WL=-600, WW=1500):
-        upper, lower = WL + WW // 2, WL - WW // 2
-        X = np.clip(img.copy(), lower, upper)
-        X = X - np.min(X)
-        X = X / (np.max(X) / 255.0)
-        return X
+    def __extract_series_ids(directory_path):
+        logger.info('Extracting series IDs...')
+        try:
+            series_IDs = sitk.ImageSeriesReader.GetGDCMSeriesIDs(
+                directory_path)
+            logger.info('Series IDs extracted!')
+            return series_IDs
+        except Exception as e:
+            message = (f'Failed to extract series IDs. Reason: {str(e)}.')
+            logger.error(message)
 
     @staticmethod
-    def plot_slice(ct, lobe_segmentation, infec_segmentation, feature, s):
+    def __extract_series_filenames(directory_path, series_IDs):
+        logger.info('Extracting series filenames...')
+        try:
+            series_file_names = sitk.ImageSeriesReader.GetGDCMSeriesFileNames(
+                directory_path, series_IDs[0])
+            logger.info('Series filenames extracted!')
+            return series_file_names
+        except Exception as e:
+            message = (
+                f'Failed to extract series filenames. Reason: {str(e)}.')
+            logger.error(message)
+
+    @staticmethod
+    def __read_series(series_file_names):
+        logger.info('Attempting to read series...')
+        try:
+            series_reader = sitk.ImageSeriesReader()
+            series_reader.SetFileNames(series_file_names)
+            series_reader.LoadPrivateTagsOn()
+            logger.info('Series read!')
+            return series_reader
+        except Exception as e:
+            message = (f'Failed to read series. Reason: {str(e)}.')
+            logger.error(message)
+
+    @staticmethod
+    def __execute_series_reader(series_reader):
+        logger.info('Executing series reader...')
+        try:
+            image3D = series_reader.Execute()
+            logger.info('Series reader executed!')
+            return image3D
+        except Exception as e:
+            message = (f'Failed to execute series reader. Reason: {str(e)}.')
+            logger.error(message)
+
+    @staticmethod
+    def __calculate_window(img, WL=-600, WW=1500):
+        logger.info('Calculating window...')
+        try:
+            upper, lower = WL + WW // 2, WL - WW // 2
+            X = np.clip(img.copy(), lower, upper)
+            X = X - np.min(X)
+            X = X / (np.max(X) / 255.0)
+            logger.info('Window calculated!')
+            return X
+        except Exception as e:
+            message = (f'Failed to calculate window. Reason: {str(e)}.')
+            logger.error(message)
+
+    @staticmethod
+    def __plot_slice(ct, lobe_segmentation, infec_segmentation, feature, s):
         nii_data = ct[:, :, :, 0].astype('uint8')
         nii_mask = infec_segmentation > 0.5
 
