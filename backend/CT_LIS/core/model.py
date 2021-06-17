@@ -19,25 +19,25 @@ from scipy.ndimage.morphology import binary_dilation
 
 logger = logging.getLogger('backend')
 
-MODEL_PATH = f'{os.getcwd()}/inferences/core/h5s/fuck_model.h5'
-WEIGHTS_0_PATH = f'{os.getcwd()}/inferences/core/h5s/weight_0.h5'
-WEIGHTS_1_PATH = f'{os.getcwd()}/inferences/core/h5s/weight_1.h5'
+MODEL_PATH = f'{os.getcwd()}/CT_LIS/core/h5s/fuck_model.h5'
+WEIGHTS_0_PATH = f'{os.getcwd()}/CT_LIS/core/h5s/weight_0.h5'
+WEIGHTS_1_PATH = f'{os.getcwd()}/CT_LIS/core/h5s/weight_1.h5'
 
 BATCH_SIZE = 8
 
 
-class COVIDSegmentationModel:
+class CTLungInfectionSegmentationModel:
     def __init__(self) -> None:
-        logger.info('Initializing the COVID segmentation model...')
+        logger.info('Initializing CT lung infection segmentation model...')
         try:
             self.batch_size = BATCH_SIZE
             self.msk = msk
             # todo: run msk on mock data for init
             self.model = keras.models.load_model(MODEL_PATH)
-            logger.info('COVID segmentation model initialized!')
+            logger.info('CT lung infection segmentation model initialized!')
         except Exception as e:
-            message = ('Failed to initialize the COVID segmentation model. '
-                       f'Reason: {str(e)}.')
+            message = ('Failed to initialize CT lung infection segmentation '
+                       f'model. Reason: {str(e)}.')
             logger.error(message)
             raise Exception(message)  # todo: Replace base exception.
 

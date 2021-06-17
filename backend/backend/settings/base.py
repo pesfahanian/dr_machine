@@ -29,7 +29,7 @@ INSTALLED_APPS = [
 
     # apps
     'accounts',
-    'inferences',
+    'CT_LIS',
 ]
 
 MIDDLEWARE = [
