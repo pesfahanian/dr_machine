@@ -3,11 +3,9 @@ import os
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
-from backend.settings import MEDIA_ROOT
-
-from inferences.core.model import Model
+from inferences.core.model import COVIDSegmentationModel
 from inferences.models import ChestXRayInference, COVIDCTInference
-from inferences.tasks import execute_run_segmentation, get_results
+# from inferences.tasks import execute_run_segmentation, get_results
 from inferences.utils.dicom_utils import read_metadata
 from inferences.utils.misc import process_zipfile_case
 
@@ -37,6 +35,19 @@ def run_covid_inference(sender, instance, created, **kwargs):
         extract_path = f'{instance.cases_directory_path}/{instance.id}/'
 
         process_zipfile_case(instance.file.path, extract_path)
+
+        print(extract_path)
+
+        result_path = f'{instance.results_directory_path}/{instance.id}/'
+
+        print(result_path)
+
+        if not os.path.isdir(result_path):
+            os.makedirs(result_path)
+
+        model = COVIDSegmentationModel()
+
+        model.run(directory_path=extract_path, result_path=result_path)
 
         # task = execute_run_segmentation.delay(directory_path=extract_path)
         # task_id = task.id

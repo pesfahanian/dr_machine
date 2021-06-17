@@ -41,10 +41,11 @@ class COVIDSegmentationModel:
             logger.error(message)
             raise Exception(message)  # todo: Replace base exception.
 
-    def run(self, directory_path):
-        return self.__run_segmentation(directory_path)
+    def run(self, directory_path, result_path):
+        return self.__run_segmentation(directory_path=directory_path,
+                                       result_path=result_path)
 
-    def __run_segmentation(self, directory_path):
+    def __run_segmentation(self, directory_path, result_path):
         logger.info('Running segmentation...')
 
         series_IDs = self.__extract_series_ids(directory_path=directory_path)
@@ -67,7 +68,8 @@ class COVIDSegmentationModel:
         feature = np.round(np.array(feature) * 100, 1)
         logger.info(f'Features: {feature}')
 
-        self.__store_results(image3D=image3D,
+        self.__store_results(result_path=result_path,
+                             image3D=image3D,
                              infec_segmentation=infec_segmentation,
                              lobe_segmentation=lobe_segmentation,
                              feature=feature)
@@ -149,8 +151,8 @@ class COVIDSegmentationModel:
             message = (f'Failed to pre-process. Reason: {str(e)}.')
             logger.error(message)
 
-    def __store_results(self, image3D, infec_segmentation, lobe_segmentation,
-                        feature):
+    def __store_results(self, result_path, image3D, infec_segmentation,
+                        lobe_segmentation, feature):
         logger.info('Storing results...')
         try:
             for s in range(len(infec_segmentation)):
@@ -160,8 +162,7 @@ class COVIDSegmentationModel:
                                       feature,
                                       s=s)
                 a = Image.fromarray(a)
-                store_path = 'media/2021-05-24_ava_lazemzadeh/covid_ct/resutls/0a79338b-935e-42e1-ba6c-d6d83f2a1e5a/'
-                a.save(store_path + str(s).zfill(3) + '.jpg',
+                a.save(result_path + str(s).zfill(3) + '.jpg',
                        format='JPEG',
                        quality=80)
             logger.info('Results stored!')
