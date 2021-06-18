@@ -10,9 +10,7 @@ import SimpleITK as sitk
 from lungmask import mask as msk
 from skimage import measure
 
-from tensorflow import keras
-# from tensorflow.keras import backend as K
-# from tensorflow.keras.models import load_model
+from tensorflow.keras.models import load_model
 
 from scipy.ndimage import gaussian_filter as gf
 from scipy.ndimage.morphology import binary_dilation
@@ -34,7 +32,7 @@ class CTLungInfectionSegmentationModel:
 
             # todo: run msk on mock data for init
             self.msk = msk
-            self.model = keras.models.load_model(MODEL_PATH)
+            self.model = load_model(MODEL_PATH)
 
             self.case_path = None
             self.result_path = None
@@ -67,13 +65,13 @@ class CTLungInfectionSegmentationModel:
         series_reader = self.__read_series(series_file_names=series_file_names)
         self.image3D = self.__execute_series_reader(series_reader)
 
-        # self.lobe_segmentation = self.__run_mask()
-        self.lobe_segmentation = np.load('ls.npy')
+        self.lobe_segmentation = self.__run_mask()
+        # self.lobe_segmentation = np.load('ls.npy')
 
         self.image3D = self.__preprocess()
 
-        # self.infection_segmentation = self.__run_models()
-        self.infection_segmentation = np.load('is.npy')
+        self.infection_segmentation = self.__run_models()
+        # self.infection_segmentation = np.load('is.npy')
 
         features = []
         for i_lobe in range(1, 6):
@@ -81,11 +79,14 @@ class CTLungInfectionSegmentationModel:
             lobe_point = lobe_point[self.lobe_segmentation == i_lobe]
             lobe_point = lobe_point.flatten()
             features.append(((lobe_point > 0.5).sum()) / len(lobe_point))
+
         features = np.round(np.array(features) * 100, 1)
         self.features = features
-        logger.info(f'Features: {features}')
+        logger.info(f'Extracted features: {self.features}')
 
         self.__store_results()
+
+        return list(self.features)
 
     def __extract_series_ids(self):
         logger.info('Extracting series IDs...')

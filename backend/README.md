@@ -7,7 +7,7 @@ This application is developed using:
 - [lungmask](https://github.com/JoHof/lungmask) package (utilizing [PyTorch](https://pytorch.org/))
 
 ## Usage
-- Relocate to the `backend` directory:
+- Relocate to the backend directory:
     ```shell
     $ cd backend
     ```
@@ -31,9 +31,9 @@ This application is developed using:
     ```shell
     $ python manage.py createsuperuser
     ```
-- Start the `redis` worker:
+- Start the Redis worker (make sure you have Redis installed):
     ```shell
-    $ celery -A backend.celery worker -l info
+    $ celery -A backend.celery worker --pool=solo -l info
     ```
 - In a seperate terminal, run server:
     ```shell
