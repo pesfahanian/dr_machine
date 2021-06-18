@@ -27,8 +27,7 @@ def run_CTLungInfectionSegmentation(sender, instance, created, **kwargs):
 
         case_directory_path = f'{instance.cases_directory_path}/{instance.id}/'
 
-        process_zipfile_case(instance.file.path,
-                             case_directory_path)
+        process_zipfile_case(instance.file.path, case_directory_path)
 
         print(case_directory_path)
 
@@ -41,8 +40,8 @@ def run_CTLungInfectionSegmentation(sender, instance, created, **kwargs):
 
         model = CTLungInfectionSegmentationModel()
 
-        model.run(directory_path=case_directory_path,
-                  result_path=result_directory_path)
+        model.run(case_directory_path=case_directory_path,
+                  result_directory_path=result_directory_path)
 
         # task = execute_run_segmentation.delay(directory_path=case_directory_path)
         # task_id = task.id
