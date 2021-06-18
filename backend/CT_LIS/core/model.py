@@ -66,9 +66,14 @@ class CTLungInfectionSegmentationModel:
 
         series_reader = self.__read_series(series_file_names=series_file_names)
         self.image3D = self.__execute_series_reader(series_reader)
-        self.lobe_segmentation = self.__run_mask()
+
+        # self.lobe_segmentation = self.__run_mask()
+        self.lobe_segmentation = np.load('ls.npy')
+
         self.image3D = self.__preprocess()
-        self.infection_segmentation = self.__run_models()
+
+        # self.infection_segmentation = self.__run_models()
+        self.infection_segmentation = np.load('is.npy')
 
         features = []
         for i_lobe in range(1, 6):
@@ -77,9 +82,33 @@ class CTLungInfectionSegmentationModel:
             lobe_point = lobe_point.flatten()
             features.append(((lobe_point > 0.5).sum()) / len(lobe_point))
         features = np.round(np.array(features) * 100, 1)
+        self.features = features
         logger.info(f'Features: {features}')
 
         self.__store_results()
+
+    def __extract_series_ids(self):
+        logger.info('Extracting series IDs...')
+        try:
+            series_IDs = sitk.ImageSeriesReader.GetGDCMSeriesIDs(
+                self.case_path)
+            logger.info('Series IDs extracted!')
+            return series_IDs
+        except Exception as e:
+            message = (f'Failed to extract series IDs. Reason: {str(e)}.')
+            logger.error(message)
+
+    def __extract_series_filenames(self, series_IDs):
+        logger.info('Extracting series filenames...')
+        try:
+            series_file_names = sitk.ImageSeriesReader.GetGDCMSeriesFileNames(
+                self.case_path, series_IDs[0])
+            logger.info('Series filenames extracted!')
+            return series_file_names
+        except Exception as e:
+            message = (
+                f'Failed to extract series filenames. Reason: {str(e)}.')
+            logger.error(message)
 
     def __run_mask(self):
         logger.info('Running mask...')
@@ -95,6 +124,22 @@ class CTLungInfectionSegmentationModel:
             return _mask
         except Exception as e:
             message = (f'Failed to run mask. Reason: {str(e)}.')
+            logger.error(message)
+
+    def __preprocess(self):
+        logger.info('Pre-processing...')
+        try:
+            sss = 0.7
+            ct = sitk.GetArrayViewFromImage(self.image3D).copy()
+            ct[ct < -1024] = -1024
+            sig = min((ct.shape[2] / 150.) * sss, 1)
+            ct = gf(ct, sig)
+            ct = self.__calculate_window(ct)
+            ct = np.array([ct, ct, ct]).transpose(1, 2, 3, 0)
+            logger.info('Pre-process complete!')
+            return ct
+        except Exception as e:
+            message = (f'Failed to pre-process. Reason: {str(e)}.')
             logger.error(message)
 
     def __run_models(self):
@@ -141,31 +186,11 @@ class CTLungInfectionSegmentationModel:
             message = (f'Failed to run model_1. Reason: {str(e)}.')
             logger.error(message)
 
-    def __preprocess(self):
-        logger.info('Pre-processing...')
-        try:
-            sss = 0.7
-            ct = sitk.GetArrayViewFromImage(self.image3D).copy()
-            ct[ct < -1024] = -1024
-            sig = min((ct.shape[2] / 150.) * sss, 1)
-            ct = gf(ct, sig)
-            ct = self.__calculate_window(ct)
-            ct = np.array([ct, ct, ct]).transpose(1, 2, 3, 0)
-            logger.info('Pre-process complete!')
-            return ct
-        except Exception as e:
-            message = (f'Failed to pre-process. Reason: {str(e)}.')
-            logger.error(message)
-
     def __store_results(self):
         logger.info('Storing results...')
         try:
             for s in range(len(self.infection_segmentation)):
-                a = self.__plot_slice(self.image3D,
-                                      self.lobe_segmentation,
-                                      self.infection_segmentation,
-                                      self.features,
-                                      s=s)
+                a = self.__plot_slice(s=s)
                 a = Image.fromarray(a)
                 a.save(self.result_path + str(s).zfill(3) + '.jpg',
                        format='JPEG',
@@ -175,105 +200,86 @@ class CTLungInfectionSegmentationModel:
             message = (f'Failed to store results. Reason: {str(e)}.')
             logger.error(message)
 
-    def __extract_series_ids(self):
-        logger.info('Extracting series IDs...')
+    def __plot_slice(self, s):
         try:
-            series_IDs = sitk.ImageSeriesReader.GetGDCMSeriesIDs(
-                self.case_path)
-            logger.info('Series IDs extracted!')
-            return series_IDs
-        except Exception as e:
-            message = (f'Failed to extract series IDs. Reason: {str(e)}.')
-            logger.error(message)
+            nii_data = self.image3D[:, :, :, 0].astype('uint8')
+            nii_mask = self.infection_segmentation > 0.5
+            contour = measure.find_contours(nii_mask[s, :, :], 0.5)
 
-    def __extract_series_filenames(self, series_IDs):
-        logger.info('Extracting series filenames...')
-        try:
-            series_file_names = sitk.ImageSeriesReader.GetGDCMSeriesFileNames(
-                self.case_path, series_IDs[0])
-            logger.info('Series filenames extracted!')
-            return series_file_names
-        except Exception as e:
-            message = (
-                f'Failed to extract series filenames. Reason: {str(e)}.')
-            logger.error(message)
+            rgb_img = cv2.merge(
+                [nii_data[s, :, :], nii_data[s, :, :], nii_data[s, :, :]])
 
-    def __plot_slice(self, ct, s):
-        nii_data = ct[:, :, :, 0].astype('uint8')
-        nii_mask = self.infection_segmentation > 0.5
+            font = cv2.FONT_HERSHEY_SIMPLEX
+            main0 = rgb_img.copy()
 
-        contour = measure.find_contours(nii_mask[s, :, :], 0.5)
+            for t in range(len(contour)):
+                i = np.array(np.round(contour[t], 0), int)
+                img_pl = np.zeros((512, 512))
+                cv2.fillPoly(img_pl, pts=[i[:, [1, 0]]], color=(1))
+                img_pl = np.array(img_pl)
+                img_pl[img_pl > 0] = 1
+                img_pl = binary_dilation(img_pl,
+                                         structure=np.ones((3, 3)),
+                                         iterations=1)
 
-        rgb_img = cv2.merge(
-            [nii_data[s, :, :], nii_data[s, :, :], nii_data[s, :, :]])
+                contour_2 = measure.find_contours(img_pl, 0.5)
+                i2 = np.array(np.round(contour_2[0], 0), int)
+                cv2.drawContours(rgb_img, [i2[:, [1, 0]]], -1, (255, 0, 0), 1)
 
-        font = cv2.FONT_HERSHEY_SIMPLEX
+            main = rgb_img.copy()
 
-        main0 = rgb_img.copy()
+            if nii_mask[s, :, :].sum() > 0:
+                cv2.putText(main0, 'YES', (5, 50), font, 2, (0, 255, 0), 2,
+                            cv2.LINE_AA)
+            else:
+                cv2.putText(main0, 'No', (5, 50), font, 2, (255, 0, 0), 2,
+                            cv2.LINE_AA)
 
-        for t in range(len(contour)):
-            i = np.array(np.round(contour[t], 0), int)
-            img_pl = np.zeros((512, 512))
-            cv2.fillPoly(img_pl, pts=[i[:, [1, 0]]], color=(1))
-            img_pl = np.array(img_pl)
-            img_pl[img_pl > 0] = 1
-
-            img_pl = binary_dilation(img_pl,
-                                     structure=np.ones((3, 3)),
-                                     iterations=1)
-
-            contour_2 = measure.find_contours(img_pl, 0.5)
-            i2 = np.array(np.round(contour_2[0], 0), int)
-            cv2.drawContours(rgb_img, [i2[:, [1, 0]]], -1, (255, 0, 0), 1)
-
-        main = rgb_img.copy()
-
-        if nii_mask[s, :, :].sum() > 0:
-            cv2.putText(main0, 'YES', (5, 50), font, 2, (0, 255, 0), 2,
-                        cv2.LINE_AA)
-        else:
-            cv2.putText(main0, 'No', (5, 50), font, 2, (255, 0, 0), 2,
+            cv2.putText(main0, str(s), (450, 30), font, 1, (0, 0, 255), 2,
                         cv2.LINE_AA)
 
-        cv2.putText(main0, str(s), (450, 30), font, 1, (0, 0, 255), 2,
-                    cv2.LINE_AA)
+            RGBforLabel = {
+                1: (0, 0, 204),
+                2: (255, 77, 255),
+                3: (255, 255, 25),
+                4: (0, 255, 255),
+                5: (255, 102, 25)
+            }
 
-        RGBforLabel = {
-            1: (0, 0, 204),
-            2: (255, 77, 255),
-            3: (255, 255, 25),
-            4: (0, 255, 255),
-            5: (255, 102, 25)
-        }
+            lobe_name = [
+                'Left  Upper', 'Left  Lower', 'Right Upper', 'Right Middle',
+                'Right Lower'
+            ]
 
-        lobe_name = [
-            'Left  Upper', 'Left  Lower', 'Right Upper', 'Right Middle',
-            'Right Lower'
-        ]
+            for i_lobe in range(1, 6):
+                seg = (self.lobe_segmentation[s] == i_lobe).astype('uint8')
 
-        for i_lobe in range(1, 6):
-            seg = (self.lobe_segmentation[s] == i_lobe).astype('uint8')
-            contours, _ = cv2.findContours(seg, cv2.RETR_EXTERNAL,
-                                           cv2.CHAIN_APPROX_NONE)
-            for i, c in enumerate(contours):
-                mask = np.zeros(seg.shape, np.uint8)
-                cv2.drawContours(mask, [c], -1, 255, -1)
-                label = i_lobe
-                colour = RGBforLabel.get(label)
-                cv2.drawContours(main, [c], -1, colour, 1)
+                contours, _ = cv2.findContours(seg, cv2.RETR_EXTERNAL,
+                                               cv2.CHAIN_APPROX_NONE)
 
-            colour = RGBforLabel.get(i_lobe)
+                for i, c in enumerate(contours):
+                    mask = np.zeros(seg.shape, np.uint8)
+                    cv2.drawContours(mask, [c], -1, 255, -1)
+                    label = i_lobe
+                    colour = RGBforLabel.get(label)
+                    cv2.drawContours(main, [c], -1, colour, 1)
 
-            cv2.putText(
-                main, lobe_name[i_lobe - 1] + f' = {self.features[i_lobe-1]}%',
-                (5, -5 + i_lobe * 20), font, 0.5, colour, 1, cv2.LINE_AA)
+                colour = RGBforLabel.get(i_lobe)
 
-        cv2.putText(main, 'Infection', (370, 25), font, 1, (255, 0, 0), 1,
-                    cv2.LINE_AA)
+                cv2.putText(
+                    main,
+                    lobe_name[i_lobe - 1] + f' = {self.features[i_lobe-1]}%',
+                    (5, -5 + i_lobe * 20), font, 0.5, colour, 1, cv2.LINE_AA)
 
-        final_plot = np.concatenate((main0, main), axis=1)
+            cv2.putText(main, 'Infection', (370, 25), font, 1, (255, 0, 0), 1,
+                        cv2.LINE_AA)
 
-        return final_plot
+            final_plot = np.concatenate((main0, main), axis=1)
+
+            return final_plot
+        except Exception as e:
+            message = (f'Failed to plot slice. Reason: {str(e)}.')
+            logger.error(message)
 
     @staticmethod
     def __read_series(series_file_names):
