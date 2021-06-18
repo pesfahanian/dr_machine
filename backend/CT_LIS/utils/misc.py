@@ -2,10 +2,12 @@ import os
 import zipfile
 
 
-def process_zipfile_case(zipfile_path, extract_path) -> None:
-    print('-------- in process_zipfile_case')
-    print(f'------- type zipfile_path: {type(zipfile_path)}')
-    print(f'------- type extract_path: {type(extract_path)}')
+def extract_zipfile_case(zipfile_path: str, extract_path: str) -> None:
     with zipfile.ZipFile(zipfile_path, 'r') as zip_ref:
         zip_ref.extractall(extract_path)
     os.remove(zipfile_path)
+
+
+def validate_result_directory_existence(result_directory_path: str) -> None:
+    if not os.path.isdir(result_directory_path):
+        os.makedirs(result_directory_path)

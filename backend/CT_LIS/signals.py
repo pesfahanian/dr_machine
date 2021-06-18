@@ -1,13 +1,16 @@
-import os
+import logging
 
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
 from CT_LIS.core.model import CTLungInfectionSegmentationModel
 from CT_LIS.models import CTLungInfectionSegmentation
-# from CT_LIS.tasks import execute_run_segmentation, get_results
+from CT_LIS.tasks import execute_run_model
 from CT_LIS.utils.dicom_utils import read_metadata
-from CT_LIS.utils.misc import process_zipfile_case
+from CT_LIS.utils.misc import (extract_zipfile_case,
+                               validate_result_directory_existence)
+
+logger = logging.getLogger('backend')
 
 
 @receiver(post_save, sender=CTLungInfectionSegmentation)
@@ -26,22 +29,19 @@ def run_CTLungInfectionSegmentation(sender, instance, created, **kwargs):
         # report = execute_run_inference.delay(file_path=instance.file.path)
 
         case_directory_path = f'{instance.cases_directory_path}/{instance.id}/'
-
-        process_zipfile_case(instance.file.path, case_directory_path)
-
-        print(case_directory_path)
+        extract_zipfile_case(instance.file.path, case_directory_path)
 
         result_directory_path = f'{instance.results_directory_path}/{instance.id}/'
+        validate_result_directory_existence(
+            result_directory_path=result_directory_path)
 
-        print(result_directory_path)
+        # model = CTLungInfectionSegmentationModel()
 
-        if not os.path.isdir(result_directory_path):
-            os.makedirs(result_directory_path)
+        # model.run(case_directory_path=case_directory_path,
+        #           result_directory_path=result_directory_path)
 
-        model = CTLungInfectionSegmentationModel()
-
-        model.run(case_directory_path=case_directory_path,
-                  result_directory_path=result_directory_path)
+        execute_run_model.delay(case_directory_path=case_directory_path,
+                                result_directory_path=result_directory_path)
 
         # task = execute_run_segmentation.delay(directory_path=case_directory_path)
         # task_id = task.id
