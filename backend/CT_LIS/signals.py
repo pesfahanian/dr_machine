@@ -5,6 +5,7 @@ from django.dispatch import receiver
 
 from CT_LIS.models import CTLungInfectionSegmentation
 from CT_LIS.tasks import execute_run_model
+from CT_LIS.transactions import update_case_metadata
 from CT_LIS.utils.dicom_utils import read_metadata
 from CT_LIS.utils.misc import (extract_zipfile_case,
                                validate_result_directory_existence,
@@ -24,18 +25,19 @@ def run_CTLungInfectionSegmentation(sender, instance, created, **kwargs):
         _file = find_a_dicom_file(case_directory_path=case_directory_path)
 
         metadata = read_metadata(_file)
-        instance.patient_id = metadata['PatientID']
-        instance.patient_sex = metadata['PatientSex']
-        instance.patient_age = int(metadata['PatientAge'][:-1])
-        instance.save()
+        update_case_metadata(instance=instance, metadata=metadata)
+        # instance.patient_id = metadata['PatientID']
+        # instance.patient_sex = metadata['PatientSex']
+        # instance.patient_age = int(metadata['PatientAge'][:-1])
+        # instance.save()
 
         result_directory_path = f'{instance.results_directory_path}/{instance.id}/'
         validate_result_directory_existence(
             result_directory_path=result_directory_path)
 
-        execute_run_model.delay(case_directory_path=case_directory_path,
-                                result_directory_path=result_directory_path,
-                                id=instance.id)
+        # execute_run_model.delay(case_directory_path=case_directory_path,
+        #                         result_directory_path=result_directory_path,
+        #                         id=instance.id)
 
         logger.info('CT lung infection segmentation task was '
                     'successfully added to the task queue!')
